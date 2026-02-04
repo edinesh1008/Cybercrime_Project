@@ -4,13 +4,10 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 import joblib
 
-# Load dataset
+# Load Dataset
 data = pd.read_csv("cybercrime.csv")
-
-# Remove missing values
 data = data.dropna()
 
-# Create encoders dictionary
 encoders = {}
 
 columns = [
@@ -30,7 +27,7 @@ for col in columns:
     data[col] = encoder.fit_transform(data[col])
     encoders[col] = encoder
 
-# Features & Target
+# ML Features
 X = data[
     [
         "City",
@@ -40,13 +37,15 @@ X = data[
         "Victim_Age_Group",
         "Transaction_Mode",
         "Bank_Type",
-        "Day_of_Week"
+        "Day_of_Week",
+        "Month",
+        "Hour"
     ]
 ]
 
 y = data["Location"]
 
-# Train Test Split
+# Train/Test Split
 X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, random_state=42
 )
@@ -55,14 +54,12 @@ X_train, X_test, y_train, y_test = train_test_split(
 model = RandomForestClassifier(n_estimators=200, random_state=42)
 model.fit(X_train, y_train)
 
-# Accuracy
-accuracy = model.score(X_test, y_test)
-print("Model Accuracy:", accuracy)
+print("Model Accuracy:", model.score(X_test, y_test))
 
 # Save Model
 joblib.dump(model, "cybercrime_model.pkl")
 
-# Save Encoders (IMPORTANT → Matches your Streamlit app)
+# Save Encoders
 joblib.dump(encoders["City"], "city_encoder.pkl")
 joblib.dump(encoders["Crime_Type"], "Crime_Type_encoder.pkl")
 joblib.dump(encoders["Time_of_Crime"], "Time_of_Crime_encoder.pkl")

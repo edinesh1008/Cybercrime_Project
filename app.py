@@ -4,7 +4,7 @@ import joblib
 # Load ML Model
 model = joblib.load("cybercrime_model.pkl")
 
-# Load Encoders (MATCHING YOUR FILE NAMES EXACTLY)
+# Load Encoders
 encoders = {
     "City": joblib.load("city_encoder.pkl"),
     "Crime_Type": joblib.load("Crime_Type_encoder.pkl"),
@@ -18,26 +18,43 @@ encoders = {
 
 st.title("Cybercrime Prediction System")
 
+# Date & Time Inputs
+crime_date = st.date_input("Select Crime Date")
+crime_time = st.time_input("Select Crime Time")
+
+month = crime_date.month
+hour = crime_time.hour
+
 # User Inputs
 inputs = {}
 
 for col in list(encoders.keys())[:-1]:
     inputs[col] = st.selectbox(f"Select {col}", encoders[col].classes_)
 
-amount = st.number_input("Enter Fraud Amount", min_value=0)
+# Amount Input
+amount = st.number_input("Enter Fraud Amount", min_value=1)
 
+# Prediction
 if st.button("Predict"):
 
-    encoded_input = []
+    if amount <= 0:
+        st.warning("⚠ Please enter valid Fraud Amount")
 
-    for col in list(encoders.keys())[:-1]:
-        encoded_input.append(encoders[col].transform([inputs[col]])[0])
+    else:
+        encoded_input = []
 
-    # Insert Amount in correct position
-    encoded_input.insert(2, amount)
+        for col in list(encoders.keys())[:-1]:
+            encoded_input.append(encoders[col].transform([inputs[col]])[0])
 
-    prediction = model.predict([encoded_input])
+        # Insert Amount
+        encoded_input.insert(2, amount)
 
-    result = encoders["Location"].inverse_transform(prediction)
+        # Add Month & Hour
+        encoded_input.append(month)
+        encoded_input.append(hour)
 
-    st.success(f"Predicted Crime Location: {result[0]}")
+        prediction = model.predict([encoded_input])
+
+        result = encoders["Location"].inverse_transform(prediction)
+
+        st.success(f"Predicted Crime Location: {result[0]}")
