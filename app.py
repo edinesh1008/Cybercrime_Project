@@ -1,6 +1,7 @@
 import streamlit as st
 import joblib
 
+# Load model and encoders
 model = joblib.load("cybercrime_model.pkl")
 city_encoder = joblib.load("city_encoder.pkl")
 crime_encoder = joblib.load("crime_encoder.pkl")
@@ -8,6 +9,7 @@ location_encoder = joblib.load("location_encoder.pkl")
 
 st.title("Cybercrime Prediction System")
 
+# Dropdown inputs
 city = st.selectbox("Select City", city_encoder.classes_)
 crime = st.selectbox("Select Crime Type", crime_encoder.classes_)
 amount = st.number_input("Enter Fraud Amount")
