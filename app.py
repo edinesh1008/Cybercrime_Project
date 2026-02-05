@@ -18,6 +18,11 @@ encoders = {
 
 st.title("Cybercrime Prediction System")
 
+# 👤 Person Details
+name = st.text_input("Enter Victim Name")
+
+card_number = st.text_input("Enter Card Number (12 digits only)")
+
 # Date & Time Inputs
 crime_date = st.date_input("Select Crime Date")
 crime_time = st.time_input("Select Crime Time")
@@ -25,7 +30,7 @@ crime_time = st.time_input("Select Crime Time")
 month = crime_date.month
 hour = crime_time.hour
 
-# User Inputs
+# Crime Inputs
 inputs = {}
 
 for col in list(encoders.keys())[:-1]:
@@ -37,7 +42,14 @@ amount = st.number_input("Enter Fraud Amount", min_value=1)
 # Prediction
 if st.button("Predict"):
 
-    if amount <= 0:
+    # Validation Checks
+    if name.strip() == "":
+        st.warning("⚠ Please enter victim name")
+
+    elif not card_number.isdigit() or len(card_number) != 12:
+        st.warning("⚠ Card number must be exactly 12 digits")
+
+    elif amount <= 0:
         st.warning("⚠ Please enter valid Fraud Amount")
 
     else:
@@ -46,10 +58,8 @@ if st.button("Predict"):
         for col in list(encoders.keys())[:-1]:
             encoded_input.append(encoders[col].transform([inputs[col]])[0])
 
-        # Insert Amount
         encoded_input.insert(2, amount)
 
-        # Add Month & Hour
         encoded_input.append(month)
         encoded_input.append(hour)
 
@@ -58,3 +68,7 @@ if st.button("Predict"):
         result = encoders["Location"].inverse_transform(prediction)
 
         st.success(f"Predicted Crime Location: {result[0]}")
+
+        # Display User Details
+        st.info(f"Victim Name: {name}")
+        st.info(f"Card Number: {card_number}")

@@ -4,9 +4,12 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 import joblib
 
-# Load Dataset
+# Load dataset
 data = pd.read_csv("cybercrime.csv")
 data = data.dropna()
+
+# Remove sensitive columns from ML
+data = data.drop(["Name", "Card_Number"], axis=1)
 
 encoders = {}
 
@@ -51,7 +54,7 @@ X_train, X_test, y_train, y_test = train_test_split(
 )
 
 # Train Model
-model = RandomForestClassifier(n_estimators=200, random_state=42)
+model = RandomForestClassifier(n_estimators=200)
 model.fit(X_train, y_train)
 
 print("Model Accuracy:", model.score(X_test, y_test))
