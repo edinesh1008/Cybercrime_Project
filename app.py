@@ -1,80 +1,10 @@
-# ===============================
-# IMPORTS
-# ===============================
 import streamlit as st
 import joblib
 import pandas as pd
 import matplotlib.pyplot as plt
 import networkx as nx
-import random
-from reportlab.platypus import SimpleDocTemplate, Paragraph
-from reportlab.lib.styles import getSampleStyleSheet
 
-
-# ===============================
-# HELPER FUNCTIONS
-# ===============================
-
-# Transaction Timeline
-def show_transaction_timeline():
-    times = ["09:00","11:30","13:00","15:45","18:20"]
-    amounts = [5000,12000,8000,45000,20000]
-
-    df = pd.DataFrame({"Time":times,"Amount":amounts})
-
-    fig, ax = plt.subplots()
-    ax.plot(df["Time"],df["Amount"],marker="o")
-    st.pyplot(fig)
-
-
-# Fraud Network Graph
-def show_fraud_network():
-    G = nx.Graph()
-    G.add_edges_from([
-        ("Victim","Account A"),
-        ("Account A","Account B"),
-        ("Account B","Account C")
-    ])
-
-    fig, ax = plt.subplots()
-    nx.draw(G,with_labels=True,node_color="lightblue",ax=ax)
-    st.pyplot(fig)
-
-
-# Risk Score
-def show_risk_score(amount):
-    score = min(amount/1000,100)
-    st.progress(int(score))
-    st.write(f"Risk Score: {int(score)}%")
-
-
-# Bank Statement
-def generate_bank_statement():
-    data = {
-        "Transaction":["UPI Transfer","ATM Withdrawal","Online Purchase"],
-        "Amount":[45000,5000,2000]
-    }
-    st.table(pd.DataFrame(data))
-
-
-# Complaint PDF
-def generate_pdf(name, location):
-    file = "complaint.pdf"
-    doc = SimpleDocTemplate(file)
-    styles = getSampleStyleSheet()
-
-    content = [
-        Paragraph(f"Victim Name: {name}",styles["Normal"]),
-        Paragraph(f"Crime Location: {location}",styles["Normal"])
-    ]
-
-    doc.build(content)
-    return file
-
-
-# ===============================
-# LOAD MODEL & ENCODERS
-# ===============================
+# ================= LOAD MODEL =================
 model = joblib.load("cybercrime_model.pkl")
 
 encoders = {
@@ -88,49 +18,87 @@ encoders = {
     "Location": joblib.load("location_encoder.pkl")
 }
 
-
-# ===============================
-# STREAMLIT UI
-# ===============================
 st.title("Cybercrime Investigation Dashboard")
 
+# ================= USER DETAILS =================
 name = st.text_input("Victim Name")
-amount = st.number_input("Fraud Amount",min_value=1)
+card_number = st.text_input("Card Number (12 digits only)")
 
+# ================= DATE & TIME =================
+crime_date = st.date_input("Select Crime Date")
+crime_time = st.time_input("Select Crime Time")
+
+month = crime_date.month
+hour = crime_time.hour
+
+# ================= CRIME INPUT =================
 inputs = {}
 
 for col in list(encoders.keys())[:-1]:
     inputs[col] = st.selectbox(col, encoders[col].classes_)
 
+amount = st.number_input("Fraud Amount", min_value=1)
 
-# ===============================
-# PREDICTION
-# ===============================
+# ================= PREDICTION =================
 if st.button("Predict"):
 
-    encoded_input = []
+    if name.strip() == "":
+        st.warning("Enter victim name")
 
-    for col in list(encoders.keys())[:-1]:
-        encoded_input.append(encoders[col].transform([inputs[col]])[0])
+    elif not card_number.isdigit() or len(card_number) != 12:
+        st.warning("Card number must be 12 digits")
 
-    encoded_input.insert(2, amount)
+    else:
 
-    prediction = model.predict([encoded_input])
-    result = encoders["Location"].inverse_transform(prediction)
+        # ===== ML INPUT (VERY IMPORTANT) =====
+        encoded_input = [
+            encoders["City"].transform([inputs["City"]])[0],
+            encoders["Crime_Type"].transform([inputs["Crime_Type"]])[0],
+            amount,
+            encoders["Time_of_Crime"].transform([inputs["Time_of_Crime"]])[0],
+            encoders["Victim_Age_Group"].transform([inputs["Victim_Age_Group"]])[0],
+            encoders["Transaction_Mode"].transform([inputs["Transaction_Mode"]])[0],
+            encoders["Bank_Type"].transform([inputs["Bank_Type"]])[0],
+            encoders["Day_of_Week"].transform([inputs["Day_of_Week"]])[0],
+            month,
+            hour
+        ]
 
-    st.success(f"Predicted Location: {result[0]}")
+        prediction = model.predict([encoded_input])
+        result = encoders["Location"].inverse_transform(prediction)
+
+        st.success(f"Predicted Crime Location: {result[0]}")
+
+        # ================= INVESTIGATION DASHBOARD =================
+
+        st.subheader("Transaction Timeline")
+
+        times = ["09:00","11:30","13:00","15:45","18:20"]
+        amounts = [5000,12000,8000,45000,20000]
+
+        df = pd.DataFrame({"Time":times,"Amount":amounts})
+
+        fig, ax = plt.subplots()
+        ax.plot(df["Time"],df["Amount"],marker="o")
+        st.pyplot(fig)
 
 
-    # ===============================
-    # VISUALIZATION + REPORTS
-    # ===============================
+        st.subheader("Fraud Network")
 
-    show_transaction_timeline()
-    show_fraud_network()
-    show_risk_score(amount)
-    generate_bank_statement()
+        G = nx.Graph()
+        G.add_edges_from([
+            ("Victim","Account A"),
+            ("Account A","Account B"),
+            ("Account B","Account C")
+        ])
 
-    pdf = generate_pdf(name,result[0])
+        fig2, ax2 = plt.subplots()
+        nx.draw(G,with_labels=True,node_color="lightblue",ax=ax2)
+        st.pyplot(fig2)
 
-    with open(pdf,"rb") as f:
-        st.download_button("Download Complaint PDF",f,file_name=pdf)
+
+        st.subheader("Risk Score")
+
+        score = min(amount/1000,100)
+        st.progress(int(score))
+        st.write(f"Risk Level: {int(score)}%")
