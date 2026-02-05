@@ -1,10 +1,82 @@
+# ===============================
+# IMPORTS
+# ===============================
 import streamlit as st
 import joblib
+import pandas as pd
+import matplotlib.pyplot as plt
+import networkx as nx
+import random
+from reportlab.platypus import SimpleDocTemplate, Paragraph
+from reportlab.lib.styles import getSampleStyleSheet
 
-# Load ML Model
+
+# ===============================
+# HELPER FUNCTIONS
+# ===============================
+
+# Transaction Timeline
+def show_transaction_timeline():
+    times = ["09:00","11:30","13:00","15:45","18:20"]
+    amounts = [5000,12000,8000,45000,20000]
+
+    df = pd.DataFrame({"Time":times,"Amount":amounts})
+
+    fig, ax = plt.subplots()
+    ax.plot(df["Time"],df["Amount"],marker="o")
+    st.pyplot(fig)
+
+
+# Fraud Network Graph
+def show_fraud_network():
+    G = nx.Graph()
+    G.add_edges_from([
+        ("Victim","Account A"),
+        ("Account A","Account B"),
+        ("Account B","Account C")
+    ])
+
+    fig, ax = plt.subplots()
+    nx.draw(G,with_labels=True,node_color="lightblue",ax=ax)
+    st.pyplot(fig)
+
+
+# Risk Score
+def show_risk_score(amount):
+    score = min(amount/1000,100)
+    st.progress(int(score))
+    st.write(f"Risk Score: {int(score)}%")
+
+
+# Bank Statement
+def generate_bank_statement():
+    data = {
+        "Transaction":["UPI Transfer","ATM Withdrawal","Online Purchase"],
+        "Amount":[45000,5000,2000]
+    }
+    st.table(pd.DataFrame(data))
+
+
+# Complaint PDF
+def generate_pdf(name, location):
+    file = "complaint.pdf"
+    doc = SimpleDocTemplate(file)
+    styles = getSampleStyleSheet()
+
+    content = [
+        Paragraph(f"Victim Name: {name}",styles["Normal"]),
+        Paragraph(f"Crime Location: {location}",styles["Normal"])
+    ]
+
+    doc.build(content)
+    return file
+
+
+# ===============================
+# LOAD MODEL & ENCODERS
+# ===============================
 model = joblib.load("cybercrime_model.pkl")
 
-# Load Encoders
 encoders = {
     "City": joblib.load("city_encoder.pkl"),
     "Crime_Type": joblib.load("Crime_Type_encoder.pkl"),
@@ -16,59 +88,49 @@ encoders = {
     "Location": joblib.load("location_encoder.pkl")
 }
 
-st.title("Cybercrime Prediction System")
 
-# 👤 Person Details
-name = st.text_input("Enter Victim Name")
+# ===============================
+# STREAMLIT UI
+# ===============================
+st.title("Cybercrime Investigation Dashboard")
 
-card_number = st.text_input("Enter Card Number (12 digits only)")
+name = st.text_input("Victim Name")
+amount = st.number_input("Fraud Amount",min_value=1)
 
-# Date & Time Inputs
-crime_date = st.date_input("Select Crime Date")
-crime_time = st.time_input("Select Crime Time")
-
-month = crime_date.month
-hour = crime_time.hour
-
-# Crime Inputs
 inputs = {}
 
 for col in list(encoders.keys())[:-1]:
-    inputs[col] = st.selectbox(f"Select {col}", encoders[col].classes_)
+    inputs[col] = st.selectbox(col, encoders[col].classes_)
 
-# Amount Input
-amount = st.number_input("Enter Fraud Amount", min_value=1)
 
-# Prediction
+# ===============================
+# PREDICTION
+# ===============================
 if st.button("Predict"):
 
-    # Validation Checks
-    if name.strip() == "":
-        st.warning("⚠ Please enter victim name")
+    encoded_input = []
 
-    elif not card_number.isdigit() or len(card_number) != 12:
-        st.warning("⚠ Card number must be exactly 12 digits")
+    for col in list(encoders.keys())[:-1]:
+        encoded_input.append(encoders[col].transform([inputs[col]])[0])
 
-    elif amount <= 0:
-        st.warning("⚠ Please enter valid Fraud Amount")
+    encoded_input.insert(2, amount)
 
-    else:
-        encoded_input = []
+    prediction = model.predict([encoded_input])
+    result = encoders["Location"].inverse_transform(prediction)
 
-        for col in list(encoders.keys())[:-1]:
-            encoded_input.append(encoders[col].transform([inputs[col]])[0])
+    st.success(f"Predicted Location: {result[0]}")
 
-        encoded_input.insert(2, amount)
 
-        encoded_input.append(month)
-        encoded_input.append(hour)
+    # ===============================
+    # VISUALIZATION + REPORTS
+    # ===============================
 
-        prediction = model.predict([encoded_input])
+    show_transaction_timeline()
+    show_fraud_network()
+    show_risk_score(amount)
+    generate_bank_statement()
 
-        result = encoders["Location"].inverse_transform(prediction)
+    pdf = generate_pdf(name,result[0])
 
-        st.success(f"Predicted Crime Location: {result[0]}")
-
-        # Display User Details
-        st.info(f"Victim Name: {name}")
-        st.info(f"Card Number: {card_number}")
+    with open(pdf,"rb") as f:
+        st.download_button("Download Complaint PDF",f,file_name=pdf)
