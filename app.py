@@ -1,10 +1,40 @@
 import streamlit as st
 import joblib
 
+# ================= PAGE CONFIG =================
+st.set_page_config(
+    page_title="Cybercrime Intelligence System",
+    page_icon="🛡️",
+    layout="wide"
+)
+
+# ================= CUSTOM CSS =================
+st.markdown("""
+    <style>
+    .main-title {
+        font-size:40px;
+        font-weight:700;
+        color:#1f4e79;
+    }
+    .sub-title {
+        font-size:18px;
+        color:gray;
+    }
+    .prediction-box {
+        padding:20px;
+        border-radius:12px;
+        background-color:#f0f6ff;
+        border:1px solid #d6e4ff;
+        font-size:22px;
+        font-weight:600;
+        color:#0b3d91;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
 # ================= LOAD MODEL =================
 model = joblib.load("cybercrime_model.pkl")
 
-# ================= LOAD ENCODERS =================
 encoders = {
     "City": joblib.load("city_encoder.pkl"),
     "Crime_Type": joblib.load("Crime_Type_encoder.pkl"),
@@ -16,23 +46,37 @@ encoders = {
     "Location": joblib.load("location_encoder.pkl")
 }
 
-# ================= UI =================
-st.title("Cybercrime Location Prediction System")
+# ================= HEADER =================
+st.markdown('<div class="main-title">🛡 Cybercrime Intelligence Dashboard</div>', unsafe_allow_html=True)
+st.markdown('<div class="sub-title">AI-based Prediction of Likely Fraud Withdrawal Location</div>', unsafe_allow_html=True)
+st.markdown("---")
 
-st.markdown("### Enter Crime Details")
+# ================= SIDEBAR INPUTS =================
+st.sidebar.header("Enter Crime Details")
 
 inputs = {}
 
 for col in list(encoders.keys())[:-1]:
-    inputs[col] = st.selectbox(col.replace("_", " "), encoders[col].classes_)
+    inputs[col] = st.sidebar.selectbox(col.replace("_", " "), encoders[col].classes_)
 
-amount = st.number_input("Fraud Amount", min_value=1)
+amount = st.sidebar.number_input("Fraud Amount", min_value=1)
+month = st.sidebar.number_input("Month (1-12)", min_value=1, max_value=12)
+hour = st.sidebar.number_input("Hour (0-23)", min_value=0, max_value=23)
 
-month = st.number_input("Month (1-12)", min_value=1, max_value=12)
-hour = st.number_input("Hour (0-23)", min_value=0, max_value=23)
+predict_button = st.sidebar.button("🔍 Predict Location")
+
+# ================= MAIN PANEL =================
+col1, col2 = st.columns([2, 1])
+
+with col1:
+    st.subheader("Case Summary")
+    st.write("This system analyzes fraud complaint parameters and predicts the most probable withdrawal hotspot using a trained Machine Learning model.")
+
+with col2:
+    st.info("Model Used: Random Forest Classifier")
 
 # ================= PREDICTION =================
-if st.button("Predict Location"):
+if predict_button:
 
     encoded_input = [
         encoders["City"].transform([inputs["City"]])[0],
@@ -50,4 +94,14 @@ if st.button("Predict Location"):
     prediction = model.predict([encoded_input])
     location = encoders["Location"].inverse_transform(prediction)
 
-    st.success(f"Predicted Crime Location: {location[0]}")
+    st.markdown("---")
+    st.markdown(
+        f'<div class="prediction-box">📍 Predicted Crime Location: {location[0]}</div>',
+        unsafe_allow_html=True
+    )
+
+    st.success("Prediction generated successfully using trained ML model.")
+
+# ================= FOOTER =================
+st.markdown("---")
+st.caption("Cybercrime Intelligence System | Developed using Python, Scikit-Learn & Streamlit")
