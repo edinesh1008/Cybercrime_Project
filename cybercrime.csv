@@ -1,6 +1,11 @@
-City,Crime_Type,Amount,Time_of_Crime,Victim_Age_Group,Transaction_Mode,Bank_Type,Day_of_Week,Month,Hour,Location
-Chennai,Online Fraud,50000,Night,26-35,UPI,Private Bank,Monday,2,22,Tambaram
-Coimbatore,ATM Fraud,20000,Morning,36-50,ATM,Public Bank,Tuesday,3,10,Erode
-Madurai,UPI Scam,15000,Evening,18-25,UPI,Payment Bank,Friday,5,18,Dindigul
-Salem,Phishing Attack,30000,Afternoon,26-35,Net Banking,Private Bank,Wednesday,6,14,Erode
-Tirunelveli,OTP Fraud,25000,Night,36-50,Mobile Wallet,Public Bank,Sunday,7,21,Thoothukudi
+Name,Card_Number,City,Crime_Type,Amount,Time_of_Crime,Victim_Age_Group,Transaction_Mode,Bank_Type,Day_of_Week,Month,Hour,Location
+Ravi Kumar,123456789012,Chennai,Online Fraud,50000,Night,26-35,UPI,Private Bank,Monday,2,22,Tambaram
+Arun Prakash,234567890123,Chennai,UPI Scam,20000,Evening,18-25,UPI,Public Bank,Friday,3,19,Avadi
+Suresh Kumar,345678901234,Coimbatore,ATM Fraud,45000,Morning,36-50,ATM,Public Bank,Tuesday,1,9,Erode
+Karthik Raj,456789012345,Salem,Phishing Attack,30000,Afternoon,26-35,Net Banking,Private Bank,Wednesday,4,14,Erode
+Mohan Raj,567890123456,Madurai,OTP Fraud,15000,Evening,18-25,Mobile Wallet,Payment Bank,Sunday,6,18,Dindigul
+Vignesh,678901234567,Tiruchirappalli,Investment Scam,80000,Night,50+,Credit Card,Private Bank,Saturday,5,21,Thanjavur
+Praveen,789012345678,Hosur,Online Fraud,40000,Night,26-35,UPI,Private Bank,Thursday,7,23,Tiruppur
+Hari,890123456789,Tirunelveli,UPI Scam,35000,Morning,36-50,UPI,Public Bank,Friday,8,10,Thoothukudi
+Gokul,901234567890,Tambaram,ATM Fraud,32000,Evening,26-35,ATM,Public Bank,Tuesday,10,17,Chennai
+Manoj,112233445566,Vellore,Online Fraud,60000,Night,36-50,UPI,Private Bank,Wednesday,11,22,Kanchipuram
