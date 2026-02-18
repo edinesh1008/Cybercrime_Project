@@ -1,33 +1,37 @@
 import streamlit as st
 import joblib
 
-# Load model
+# ================= LOAD MODEL =================
 model = joblib.load("cybercrime_model.pkl")
 
-# Load encoders
+# ================= LOAD ENCODERS =================
 encoders = {
-    "City": joblib.load("City_encoder.pkl"),
+    "City": joblib.load("city_encoder.pkl"),
     "Crime_Type": joblib.load("Crime_Type_encoder.pkl"),
     "Time_of_Crime": joblib.load("Time_of_Crime_encoder.pkl"),
     "Victim_Age_Group": joblib.load("Victim_Age_Group_encoder.pkl"),
     "Transaction_Mode": joblib.load("Transaction_Mode_encoder.pkl"),
     "Bank_Type": joblib.load("Bank_Type_encoder.pkl"),
     "Day_of_Week": joblib.load("Day_of_Week_encoder.pkl"),
-    "Location": joblib.load("Location_encoder.pkl")
+    "Location": joblib.load("location_encoder.pkl")
 }
 
+# ================= UI =================
 st.title("Cybercrime Location Prediction System")
 
-# User inputs
+st.markdown("### Enter Crime Details")
+
 inputs = {}
 
 for col in list(encoders.keys())[:-1]:
-    inputs[col] = st.selectbox(col, encoders[col].classes_)
+    inputs[col] = st.selectbox(col.replace("_", " "), encoders[col].classes_)
 
 amount = st.number_input("Fraud Amount", min_value=1)
+
 month = st.number_input("Month (1-12)", min_value=1, max_value=12)
 hour = st.number_input("Hour (0-23)", min_value=0, max_value=23)
 
+# ================= PREDICTION =================
 if st.button("Predict Location"):
 
     encoded_input = [
